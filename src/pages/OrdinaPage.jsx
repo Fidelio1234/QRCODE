@@ -533,7 +533,7 @@ export default function OrdinaPage() {
   useEffect(() => {
     const checkStampante = async () => {
       try {
-        const response = await fetch('http://localhost:3002/api/health');
+        const response = await fetch('http://172.20.10.5:3002/api/health');
         setStampanteOnline(response.ok);
       } catch {
         setStampanteOnline(false);
