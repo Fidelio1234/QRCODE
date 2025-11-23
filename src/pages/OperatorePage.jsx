@@ -424,25 +424,28 @@ useEffect(() => {
     totalePrimoTavolo: Object.keys(ordiniPerTavolo)[0] ? getTotaleTavoloChiuso(Object.keys(ordiniPerTavolo)[0]) : 0
   });
 
-  const formattaElementoOrdine = useCallback((item, index) => {
-    if (isAreaOperatore) {
-      return (
-        <li key={index} className="ordine-riga">
-          <span className="quantita">{item.quantità} x</span>
-          <span className="prodotto">{item.prodotto}</span>
-          <span className="prezzo">€ {(item.prezzo * item.quantità).toFixed(2)}</span>
-        </li>
-      );
-    } else {
-      return (
-        <li key={index} className="ordine-riga">
-          <span className="quantita">{item.quantità} x</span>
-          <span className="prodotto">{item.prodotto}</span>
-          <span className="prezzo">€ {(item.prezzo * item.quantità).toFixed(2)}</span>
-        </li>
-      );
-    }
-  }, [isAreaOperatore]);
+ const formattaElementoOrdine = useCallback((item, index) => {
+  // ✅ PULISCI IL NOME DEL PRODOTTO - RIMUOVI "x1" DA "COPERTTO"
+  const nomeProdottoPulito = item.prodotto.replace(/\s*x1\s*$/i, '');
+  
+  if (isAreaOperatore) {
+    return (
+      <li key={index} className="ordine-riga">
+        <span className="quantita">{item.quantità} x</span>
+        <span className="prodotto">{nomeProdottoPulito}</span>
+        <span className="prezzo">€ {(item.prezzo * item.quantità).toFixed(2)}</span>
+      </li>
+    );
+  } else {
+    return (
+      <li key={index} className="ordine-riga">
+        <span className="quantita">{item.quantità} x</span>
+        <span className="prodotto">{nomeProdottoPulito}</span>
+        <span className="prezzo">€ {(item.prezzo * item.quantità).toFixed(2)}</span>
+      </li>
+    );
+  }
+}, [isAreaOperatore]);
 
   const getStatoColore = useCallback((stato) => {
     switch(stato) {
