@@ -175,34 +175,13 @@ const caricaOrdiniCompleti = useCallback(() => {
 
 
 
-// Aggiungi questa funzione al componente OperatorePage
-/*const stampaTotaleTavolo = useCallback(async () => {
-  if (!tavoloCorrente) {
-    alert('Seleziona un tavolo per stampare il totale');
-    return;
-  }
-
-  try {
-    const response = await fetch(`https://qrcode-finale.onrender.com/api/tavoli/${tavoloCorrente}/stampa-totale`, {
-      method: 'POST'
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      console.log('✅ Totale stampato:', data.message);
-      setMessaggioSuccesso(`Totale tavolo ${tavoloCorrente} stampato! Importo: € ${data.totale.toFixed(2)}`);
-    } else {
-      alert('Errore stampa totale: ' + data.error);
-    }
-  } catch (error) {
-    console.error('❌ Errore stampa totale:', error);
-    alert('Errore di connessione durante la stampa');
-  }
-}, [tavoloCorrente]);
 
 
-*/
+
+
+
+// FUNZIONE CORRETTA
+
 // ✅ FUNZIONE STAMPA TOTALE - VERSIONE ALTERNATIVA (se l'endpoint non esiste)
 const stampaTotaleTavolo = useCallback(async () => {
   if (!tavoloCorrente) {
@@ -264,6 +243,88 @@ const stampaTotaleTavolo = useCallback(async () => {
     }
   }
 }, [tavoloCorrente]);
+
+
+
+
+
+
+
+
+
+
+
+// FUNZIONE CON STAMPA TAVOLO FILTRO CHIUSI
+
+// ✅ FUNZIONE STAMPA TOTALE - VERSIONE CORRETTA PER TAVOLI CHIUSI
+/*const stampaTotaleTavolo = useCallback(async (tavoloDaStampare = null) => {
+  // Usa il tavolo passato come parametro, altrimenti usa tavoloCorrente
+  const tavolo = tavoloDaStampare || tavoloCorrente;
+  
+  if (!tavolo) {
+    alert('Seleziona un tavolo per stampare il totale');
+    return;
+  }
+
+  try {
+    console.log(`🖨️ Richiesta stampa totale tavolo ${tavolo}...`);
+    
+    // 1. Recupera gli ordini del tavolo
+    const response = await fetch(`https://qrcode-finale.onrender.com/api/ordini/tavolo/${tavolo}`);
+    const ordiniTavolo = await response.json();
+    
+    if (!ordiniTavolo || ordiniTavolo.length === 0) {
+      alert(`Nessun ordine trovato per il tavolo ${tavolo}`);
+      return;
+    }
+    
+    // 2. Calcola il totale
+    const totale = ordiniTavolo.reduce((tot, ord) => tot + ord.ordinazione.reduce((sum, item) => 
+      sum + (item.prezzo * item.quantità), 0), 0);
+    
+    console.log('📊 Dati calcolati:', {
+      tavolo: tavolo,
+      ordini: ordiniTavolo.length,
+      totale: totale
+    });
+    
+    // 3. Invia alla stampante LOCALE
+    const stampaResponse = await fetch('http://localhost:3002/api/stampa-conto', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ordini: ordiniTavolo,
+        tavolo: tavolo,
+        totale: totale
+      })
+    });
+    
+    const stampaResult = await stampaResponse.json();
+    
+    if (stampaResult.success) {
+      console.log('✅ Totale stampato con successo!');
+      setMessaggioSuccesso(`✅ Totale tavolo ${tavolo} stampato! Importo: € ${totale.toFixed(2)}`);
+    } else {
+      throw new Error(stampaResult.error || 'Errore durante la stampa');
+    }
+    
+  } catch (error) {
+    console.error('❌ Errore stampa totale:', error);
+    
+    if (error.message.includes('Failed to fetch') || error.message.includes('ECONNREFUSED')) {
+      alert('❌ Stampante non disponibile. Controlla che il servizio di stampa locale sia in esecuzione sulla porta 3002.');
+    } else {
+      alert('❌ Errore stampa totale: ' + error.message);
+    }
+  }
+}, [tavoloCorrente]);
+
+
+*/
+
+
 
 
 
@@ -485,14 +546,14 @@ useEffect(() => {
                   <div className="tavolo-chiuso-header">
                     <h3>Tavolo {tavolo} - Chiuso</h3>
                     <div className='button-stampa'>
-                 <button 
-                  className="button-stampa-totale" 
-                  onClick={stampaTotaleTavolo}
-                   disabled={ordiniFiltrati.length === 0}
-                   >
-                      🖨️ Stampa ordine
-                   </button>
-                      </div>
+                <button 
+              className="button-stampa-totale-1" 
+              onClick={() => stampaTotaleTavolo(tavolo)} 
+              disabled={ordiniTavolo.length === 0}
+            >
+              🖨️ Stampa ordine
+            </button>
+          </div>
 
                     <div className="totale-tavolo-chiuso">
                       💰 Totale: € {totaleTavolo.toFixed(2)}
@@ -607,8 +668,8 @@ useEffect(() => {
           <div className="modal-content">
             <h3>Conferma Chiusura Tavolo <strong>{tavoloCorrente}</strong></h3>
            
-            <p>✅ Gli ordini verranno archiviati e non saranno più visibili qui.</p>
-            <p>📋 Potrai comunque vederli nell'area operatore sezione "Chiusi".</p>
+            <p>✅ Gli ordini verranno archiviati nell'area operatore sezione "Chiusi".</p>
+            <p>📋 Ricordati di stampare il totale prima di chiudere il Tavolo <strong>{tavoloCorrente}</strong>.</p>
             
             {ordiniFiltrati.length > 0 && (
               <div className="dettagli-chiusura">

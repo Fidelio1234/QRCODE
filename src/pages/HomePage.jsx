@@ -58,6 +58,10 @@ export default function HomePage() {
               <div className="tavolo-number">
                 Tavolo {tavolo}
               </div>
+
+                <div className={`tavolo-stato ${isOccupato ? 'occupato' : 'libero'}`}>
+                  {isOccupato ? '🟡 Occupato' : '🟢 Libero'}
+                </div>
             </div>
           );
         })}
@@ -65,3 +69,13 @@ export default function HomePage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
