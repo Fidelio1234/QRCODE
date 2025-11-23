@@ -7,6 +7,7 @@ function useQuery() {
   return new URLSearchParams(location.search);
 }
 
+
 export default function OperatorePage() {
   const [ordini, setOrdini] = useState([]);
   const [mostraModalChiusura, setMostraModalChiusura] = useState(false);
@@ -39,13 +40,19 @@ export default function OperatorePage() {
 const caricaOrdini = useCallback(() => {
   console.log('🔍 DEBUG: Chiamando /api/ordini per tavolo:', tavoloCorrente);
   
+
+
+  
   fetch('https://qrcode-finale.onrender.com/api/ordini')
     .then(res => {
       if (!res.ok) throw new Error('Error loading orders');
       return res.json();
     })
     .then(data => {
-      console.log('📋 Ordini ATTIVI ricevuti:', data.map(o => ({ id: o.id, stato: o.stato, tavolo: o.tavolo })));
+      console.log('📊 DATI RICEVUTI DAL SERVER:');
+      data.forEach(o => {
+        console.log(`   Tavolo ${o.tavolo}: ${o.dataOra} (ID: ${o.id})`);
+      });
       setOrdini(data);
     })
     .catch(err => {
@@ -477,6 +484,16 @@ useEffect(() => {
                 <li key={tavolo} className="tavolo-chiuso-group">
                   <div className="tavolo-chiuso-header">
                     <h3>Tavolo {tavolo} - Chiuso</h3>
+                    <div className='button-stampa'>
+                 <button 
+                  className="button-stampa-totale" 
+                  onClick={stampaTotaleTavolo}
+                   disabled={ordiniFiltrati.length === 0}
+                   >
+                      🖨️ Stampa ordine
+                   </button>
+                      </div>
+
                     <div className="totale-tavolo-chiuso">
                       💰 Totale: € {totaleTavolo.toFixed(2)}
                       <small style={{display: 'block', fontSize: '0.8rem', opacity: 0.8}}>
@@ -558,7 +575,7 @@ useEffect(() => {
       {mostraModalChiusura && (
         <div className="modal-backdrop">
           <div className="modal-content">
-            <h3>Impossibile Chiudere il Tavolo</h3>
+            <h3>Impossibile Chiudere il Tavolo <strong>{tavoloCorrente}</strong></h3>
             <p>Ci sono ancora <strong>{ordiniNonEvasi.length} ordine/i non completato/i</strong> per il tavolo {tavoloCorrente}.</p>
             <p>Prima di chiudere il tavolo, assicurati di aver completato tutti gli ordini.</p>
             
@@ -588,10 +605,10 @@ useEffect(() => {
       {mostraModalConfermaChiusura && (
         <div className="modal-backdrop">
           <div className="modal-content">
-            <h3>Conferma Chiusura Tavolo</h3>
-            <p>Sei sicuro di voler chiudere tutte le comande del tavolo <strong>{tavoloCorrente}</strong>?</p>
+            <h3>Conferma Chiusura Tavolo <strong>{tavoloCorrente}</strong></h3>
+           
             <p>✅ Gli ordini verranno archiviati e non saranno più visibili qui.</p>
-            <p>📋 Potrai comunque vederli nell'area operatore con filtro "Chiusi".</p>
+            <p>📋 Potrai comunque vederli nell'area operatore sezione "Chiusi".</p>
             
             {ordiniFiltrati.length > 0 && (
               <div className="dettagli-chiusura">
