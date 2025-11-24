@@ -290,7 +290,7 @@ const stampaTotaleTavolo = useCallback(async () => {
 
 
 
-// ✅ USE EFFECT CORRETTO - AUTO-REFRESH IN TUTTE LE SITUAZIONI
+
 // ✅ USE EFFECT CORRETTO - AUTO-REFRESH IN TUTTE LE SITUAZIONI
 useEffect(() => {
   console.log('🔄 Caricamento ordini - Modalità:', isAreaOperatore ? 'Operatore' : 'Tavolo ' + tavoloCorrente);
@@ -354,13 +354,23 @@ useEffect(() => {
     [ordiniFiltrati]
   );
 
-  const totaleTavolo = useMemo(() => 
-    ordiniFiltrati.reduce((totale, ordine) => {
-      const totaleOrdine = ordine.ordinazione.reduce((acc, item) => acc + (item.prezzo * item.quantità), 0);
-      return totale + totaleOrdine;
-    }, 0),
-    [ordiniFiltrati]
-  );
+const totaleTavolo = useMemo(() => 
+  ordiniFiltrati.reduce((totale, ordine) => {
+    const totaleOrdine = ordine.ordinazione.reduce((acc, item) => {
+      // ✅ CORREGGI IL CALCOLO PER COPERTTO
+      if (item.prodotto.toLowerCase().includes('coperto')) {
+        const match = item.prodotto.match(/x\s*(\d+)/i);
+        if (match) {
+          const quantitaCoperto = parseInt(match[1]);
+          return acc + (item.prezzo * quantitaCoperto); // €2.00 × 6 = €12.00
+        }
+      }
+      return acc + (item.prezzo * item.quantità);
+    }, 0);
+    return totale + totaleOrdine;
+  }, 0),
+  [ordiniFiltrati]
+);
 
   // ✅ FUNCTION TO GET TABLE TOTAL (for closed tables) - CALCOLO DIRETTO
   const getTotaleTavoloChiuso = useCallback((tavolo) => {
@@ -420,38 +430,37 @@ useEffect(() => {
 
 
 const formattaElementoOrdine = useCallback((item, index) => {
-  // ✅ CONTROLLI DI SICUREZZA COMPLETI
-  if (!item) return null;
+  let nomeProdotto = item.prodotto;
+  let quantita = item.quantità;
+  let prezzoUnitario = item.prezzo || 0;
   
-  const nomeOriginale = item.prodotto || '';
-  const quantitaOriginale = item.quantità || 1;
-  const prezzoOriginale = item.prezzo || 0;
-  
-  let nomeProdotto = nomeOriginale;
-  let quantita = quantitaOriginale;
-  
-  // ✅ GESTIONE COPERTTO
-  if (nomeOriginale.toLowerCase().includes('coperto')) {
-    const match = nomeOriginale.match(/x\s*(\d+)/i);
+  // ✅ GESTIONE SPECIALE PER COPERTTO
+  if (item.prodotto && item.prodotto.toLowerCase().includes('coperto')) {
+    const match = item.prodotto.match(/x\s*(\d+)/i);
     if (match) {
-      quantita = parseInt(match[1]) || quantitaOriginale;
+      quantita = parseInt(match[1]);
       nomeProdotto = 'Coperto';
+      // ✅ MOLTIPLICA IL PREZZO UNITARIO PER LA QUANTITÀ
+      prezzoUnitario = prezzoUnitario * quantita;
     } else {
       nomeProdotto = 'Coperto';
     }
   } else {
-    // Prodotti normali
-    nomeProdotto = nomeOriginale.replace(/\s*x\s*\d+\s*$/i, '');
+    // Prodotti normali - pulisci il nome
+    nomeProdotto = item.prodotto.replace(/\s*x\s*\d+\s*$/i, '');
   }
   
   return (
     <li key={index} className="ordine-riga">
       <span className="quantita">{quantita} x</span>
       <span className="prodotto">{nomeProdotto}</span>
-      <span className="prezzo">€ {prezzoOriginale.toFixed(2)}</span>
+      <span className="prezzo">€ {prezzoUnitario.toFixed(2)}</span>
     </li>
   );
 }, []);
+
+
+
 
 
 

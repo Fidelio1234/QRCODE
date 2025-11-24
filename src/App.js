@@ -284,7 +284,7 @@ export default AppWrapper;
 
 
 
-import React, { useState, useEffect } from 'react';
+/*import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import './App.css';
 import HomePage from './pages/HomePage';
@@ -418,7 +418,7 @@ function App() {
             </Link>
           </div>
           
-          {/* ✅ TASTO LOGOUT */}
+          {/* ✅ TASTO LOGOUT *//*}
           <button 
             onClick={handleLogout}
             style={{
@@ -444,6 +444,247 @@ function App() {
         <Route path="/gestione-menu" element={<GestioneMenuPage />} />
         <Route path="*" element={<p>Pagina non trovata</p>} />
       </Routes>
+    </>
+  );
+}
+
+function AppWrapper() {
+  return (
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  );
+}
+
+export default AppWrapper;
+
+*/
+
+
+
+
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import './App.css';
+import HomePage from './pages/HomePage';
+import OrdinaPage from './pages/OrdinaPage';
+import OperatorePage from './pages/OperatorePage';
+import GestioneMenuPage from './pages/GestioneMenuPage';
+import LicenseModal from './components/LicenseModal';
+import SecurityModal from './components/SecurityModal';
+
+function App() {
+  const location = useLocation();
+  const mostraNavbar = !location.pathname.startsWith('/ordina');
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  // ✅ DEFINISCO LE PAGINE PROTETTE
+  const PAGINE_PROTETTE = ['/', '/operatore', '/gestione-menu'];
+  const paginaCorrenteProtetta = PAGINE_PROTETTE.includes(location.pathname);
+
+  // ✅ VERIFICA SICUREZZA SOLO ALL'AVVIO - NESSUN CONTROLLO DI INATTIVITÀ
+  useEffect(() => {
+    console.log('🔄 Verifica sicurezza...');
+    
+    const ultimoAccesso = localStorage.getItem('ultimoAccesso');
+    
+    // ✅ SEMPLICE: SE NON C'È ULTIMO ACCESSO, MOSTRA MODAL
+    if (!ultimoAccesso) {
+      console.log('🔐 Primo accesso - mostra modal');
+      setShowSecurityModal(true);
+      setIsAuthorized(false);
+    } else {
+      // ✅ ACCESSO AUTOMATICO SE C'È ULTIMO ACCESSO - NESSUN CONTROLLO TIMEOUT
+      console.log('✅ Accesso autorizzato (nessun controllo timeout)');
+      setIsAuthorized(true);
+      setShowSecurityModal(false);
+    }
+  }, []); // ✅ SOLO ALL'AVVIO
+
+  // ✅ SUCCESSO AUTENTICAZIONE
+  const handleAuthSuccess = () => {
+    console.log('🎉 Autenticazione riuscita!');
+    setIsAuthorized(true);
+    setShowSecurityModal(false);
+    localStorage.setItem('ultimoAccesso', new Date().toISOString());
+  };
+
+  // ✅ LOGOUT
+  const handleLogout = () => {
+    console.log('🚪 Logout - cancello tutto');
+    localStorage.removeItem('ultimoAccesso');
+    setIsAuthorized(false);
+    setShowSecurityModal(true);
+  };
+
+  // ✅ SE NON AUTORIZZATO SU PAGINA PROTETTA, MOSTRA SOLO SECURITY MODAL
+  if (paginaCorrenteProtetta && !isAuthorized) {
+    return (
+      <>
+        <LicenseModal />
+        <SecurityModal 
+          isOpen={showSecurityModal} 
+          onSuccess={handleAuthSuccess} 
+        />
+        <div style={{ 
+          padding: '20px', 
+          textAlign: 'center',
+          background: '#fff3cd',
+          border: '1px solid #ffeaa7'
+        }}>
+          <h3>🔐 Accesso Richiesto</h3>
+          <p>Inserisci il codice di sicurezza per continuare</p>
+        </div>
+      </>
+    );
+  }
+
+  // ✅ APP NORMALE SE AUTORIZZATO
+  return (
+    <>
+      <LicenseModal />
+
+      {mostraNavbar && (
+        <nav style={{ 
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          padding: '10px 20px',
+          background: '#0e0e0eff',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          zIndex: 1000,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+          borderBottom: '1px solid #333'
+        }}>
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            gap: '20px',
+            alignItems: 'center'
+          }}>
+            <Link 
+              to="/" 
+              style={{
+                textDecoration: 'none',
+                color: location.pathname === '/' ? '#007bff' : '#f3f5f7ff',
+                fontWeight: location.pathname === '/' ? 'bold' : 'normal',
+                fontSize: '16px',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (location.pathname !== '/') {
+                  e.target.style.background = 'rgba(255,255,255,0.1)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (location.pathname !== '/') {
+                  e.target.style.background = 'transparent';
+                }
+              }}
+            >
+              Home
+            </Link>
+            <span style={{ color: '#f9f3f3ff', opacity: 0.5 }}>|</span>
+            <Link 
+              to="/operatore" 
+              style={{
+                textDecoration: 'none',
+                color: location.pathname === '/operatore' ? '#007bff' : '#f5f7f9ff',
+                fontWeight: location.pathname === '/operatore' ? 'bold' : 'normal',
+                fontSize: '16px',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (location.pathname !== '/operatore') {
+                  e.target.style.background = 'rgba(255,255,255,0.1)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (location.pathname !== '/operatore') {
+                  e.target.style.background = 'transparent';
+                }
+              }}
+            >
+              Area Operatore
+            </Link>
+            <span style={{ color: '#dee2e6', opacity: 0.5 }}>|</span>
+            <Link 
+              to="/gestione-menu" 
+              style={{
+                textDecoration: 'none',
+                color: location.pathname === '/gestione-menu' ? '#007bff' : '#f3f5f7ff',
+                fontWeight: location.pathname === '/gestione-menu' ? 'bold' : 'normal',
+                fontSize: '16px',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (location.pathname !== '/gestione-menu') {
+                  e.target.style.background = 'rgba(255,255,255,0.1)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (location.pathname !== '/gestione-menu') {
+                  e.target.style.background = 'transparent';
+                }
+              }}
+            >
+              Gestione Menu
+            </Link>
+          </div>
+          
+          {/* ✅ TASTO LOGOUT */}
+          <button 
+            onClick={handleLogout}
+            style={{
+              background: '#dc3545',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              marginLeft: 'auto',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#c82333';
+              e.target.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#dc3545';
+              e.target.style.transform = 'translateY(0)';
+            }}
+          >
+            🚪 Logout
+          </button>
+        </nav>
+      )}
+
+      {/* ✅ CONTENUTO PRINCIPALE CON MARGINE SUPERIORE */}
+      <div style={{
+        marginTop: mostraNavbar ? '60px' : '0',
+        minHeight: 'calc(100vh - 60px)'
+      }}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/ordina" element={<OrdinaPage />} />
+          <Route path="/operatore" element={<OperatorePage />} />
+          <Route path="/gestione-menu" element={<GestioneMenuPage />} />
+          <Route path="*" element={<p>Pagina non trovata</p>} />
+        </Routes>
+      </div>
     </>
   );
 }

@@ -379,6 +379,12 @@
   }
 }
 
+
+
+
+
+
+
 /* 🔹 FILTRI STATO ORDINI */
 .filtri-stato {
   display: flex;
@@ -408,6 +414,14 @@
   background: #3498db;
   color: white;
 }
+
+
+
+
+
+
+
+
 
 /* 🔹 INFO ORDINE MIGLIORATA */
 .ordine-info {
