@@ -268,7 +268,7 @@ export default function OrdinaPage() {
     const totaleCoperto = parseFloat((prezzoCoperto * n).toFixed(2));
     const itemCoperto = {
       id: 'coperto',
-      nome: `Coperto x${n}`,
+      nome: ` Coperto x ${n}`,
       quantita: 1,
       prezzo: totaleCoperto
     };

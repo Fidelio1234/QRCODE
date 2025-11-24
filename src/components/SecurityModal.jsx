@@ -135,9 +135,7 @@ const SecurityModal = ({ onSuccess, isOpen }) => {
               ))}
             </div>
             
-            {caricamento && (
-              <div className="loading-spinner">⏳</div>
-            )}
+         
           </div>
 
           {errore && (

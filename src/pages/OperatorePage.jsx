@@ -256,73 +256,6 @@ const stampaTotaleTavolo = useCallback(async () => {
 
 // FUNZIONE CON STAMPA TAVOLO FILTRO CHIUSI
 
-// ✅ FUNZIONE STAMPA TOTALE - VERSIONE CORRETTA PER TAVOLI CHIUSI
-/*const stampaTotaleTavolo = useCallback(async (tavoloDaStampare = null) => {
-  // Usa il tavolo passato come parametro, altrimenti usa tavoloCorrente
-  const tavolo = tavoloDaStampare || tavoloCorrente;
-  
-  if (!tavolo) {
-    alert('Seleziona un tavolo per stampare il totale');
-    return;
-  }
-
-  try {
-    console.log(`🖨️ Richiesta stampa totale tavolo ${tavolo}...`);
-    
-    // 1. Recupera gli ordini del tavolo
-    const response = await fetch(`https://qrcode-finale.onrender.com/api/ordini/tavolo/${tavolo}`);
-    const ordiniTavolo = await response.json();
-    
-    if (!ordiniTavolo || ordiniTavolo.length === 0) {
-      alert(`Nessun ordine trovato per il tavolo ${tavolo}`);
-      return;
-    }
-    
-    // 2. Calcola il totale
-    const totale = ordiniTavolo.reduce((tot, ord) => tot + ord.ordinazione.reduce((sum, item) => 
-      sum + (item.prezzo * item.quantità), 0), 0);
-    
-    console.log('📊 Dati calcolati:', {
-      tavolo: tavolo,
-      ordini: ordiniTavolo.length,
-      totale: totale
-    });
-    
-    // 3. Invia alla stampante LOCALE
-    const stampaResponse = await fetch('http://localhost:3002/api/stampa-conto', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ordini: ordiniTavolo,
-        tavolo: tavolo,
-        totale: totale
-      })
-    });
-    
-    const stampaResult = await stampaResponse.json();
-    
-    if (stampaResult.success) {
-      console.log('✅ Totale stampato con successo!');
-      setMessaggioSuccesso(`✅ Totale tavolo ${tavolo} stampato! Importo: € ${totale.toFixed(2)}`);
-    } else {
-      throw new Error(stampaResult.error || 'Errore durante la stampa');
-    }
-    
-  } catch (error) {
-    console.error('❌ Errore stampa totale:', error);
-    
-    if (error.message.includes('Failed to fetch') || error.message.includes('ECONNREFUSED')) {
-      alert('❌ Stampante non disponibile. Controlla che il servizio di stampa locale sia in esecuzione sulla porta 3002.');
-    } else {
-      alert('❌ Errore stampa totale: ' + error.message);
-    }
-  }
-}, [tavoloCorrente]);
-
-
-*/
 
 
 
@@ -330,7 +263,7 @@ const stampaTotaleTavolo = useCallback(async () => {
 
 
 // ✅ USE EFFECT CORRETTO - FIX AUTO-EVASIONE
-useEffect(() => {
+/*useEffect(() => {
   console.log('🔄 Caricamento ordini - Modalità:', isAreaOperatore ? 'Operatore' : 'Tavolo ' + tavoloCorrente);
   
   if (isAreaOperatore) {
@@ -353,6 +286,35 @@ useEffect(() => {
   }
 }, [isAreaOperatore, tavoloCorrente, caricaOrdini, caricaOrdiniCompleti]);
 
+*/
+
+
+
+// ✅ USE EFFECT CORRETTO - AUTO-REFRESH IN TUTTE LE SITUAZIONI
+// ✅ USE EFFECT CORRETTO - AUTO-REFRESH IN TUTTE LE SITUAZIONI
+useEffect(() => {
+  console.log('🔄 Caricamento ordini - Modalità:', isAreaOperatore ? 'Operatore' : 'Tavolo ' + tavoloCorrente);
+  
+  // ✅ FUNZIONE PER CARICARE GLI ORDINI CORRETTI
+  const caricaOrdiniCorretti = () => {
+    if (isAreaOperatore) {
+      caricaOrdiniCompleti();
+    } else {
+      caricaOrdini();
+    }
+  };
+  
+  // ✅ CARICA SUBITO
+  caricaOrdiniCorretti();
+  
+  // ✅ AUTO-REFRESH OGNI 5 SECONDI IN TUTTE LE SITUAZIONI
+  const interval = setInterval(() => {
+    console.log('🔄 Auto-refresh attivo');
+    caricaOrdiniCorretti();
+  }, 5000); // ✅ 5 secondi invece di 10
+  
+  return () => clearInterval(interval);
+}, [isAreaOperatore, tavoloCorrente, caricaOrdini, caricaOrdiniCompleti]);
 
 
 
@@ -424,7 +386,7 @@ useEffect(() => {
     totalePrimoTavolo: Object.keys(ordiniPerTavolo)[0] ? getTotaleTavoloChiuso(Object.keys(ordiniPerTavolo)[0]) : 0
   });
 
- const formattaElementoOrdine = useCallback((item, index) => {
+ /*const formattaElementoOrdine = useCallback((item, index) => {
   // ✅ PULISCI IL NOME DEL PRODOTTO - RIMUOVI "x1" DA "COPERTTO"
   const nomeProdottoPulito = item.prodotto.replace(/\s*x1\s*$/i, '');
   
@@ -446,6 +408,52 @@ useEffect(() => {
     );
   }
 }, [isAreaOperatore]);
+
+
+
+
+
+
+
+*/
+
+
+
+const formattaElementoOrdine = useCallback((item, index) => {
+  // ✅ CONTROLLI DI SICUREZZA COMPLETI
+  if (!item) return null;
+  
+  const nomeOriginale = item.prodotto || '';
+  const quantitaOriginale = item.quantità || 1;
+  const prezzoOriginale = item.prezzo || 0;
+  
+  let nomeProdotto = nomeOriginale;
+  let quantita = quantitaOriginale;
+  
+  // ✅ GESTIONE COPERTTO
+  if (nomeOriginale.toLowerCase().includes('coperto')) {
+    const match = nomeOriginale.match(/x\s*(\d+)/i);
+    if (match) {
+      quantita = parseInt(match[1]) || quantitaOriginale;
+      nomeProdotto = 'Coperto';
+    } else {
+      nomeProdotto = 'Coperto';
+    }
+  } else {
+    // Prodotti normali
+    nomeProdotto = nomeOriginale.replace(/\s*x\s*\d+\s*$/i, '');
+  }
+  
+  return (
+    <li key={index} className="ordine-riga">
+      <span className="quantita">{quantita} x</span>
+      <span className="prodotto">{nomeProdotto}</span>
+      <span className="prezzo">€ {prezzoOriginale.toFixed(2)}</span>
+    </li>
+  );
+}, []);
+
+
 
   const getStatoColore = useCallback((stato) => {
     switch(stato) {
@@ -549,13 +557,7 @@ useEffect(() => {
                   <div className="tavolo-chiuso-header">
                     <h3>Tavolo {tavolo} - Chiuso</h3>
                     <div className='button-stampa'>
-                <button 
-              className="button-stampa-totale-1" 
-              onClick={() => stampaTotaleTavolo(tavolo)} 
-              disabled={ordiniTavolo.length === 0}
-            >
-              🖨️ Stampa ordine
-            </button>
+            
           </div>
 
                     <div className="totale-tavolo-chiuso">

@@ -391,8 +391,8 @@
 .filtro-btn {
   font-size: 15px;
   padding: 18px 50px;
-  background: #cac4d7;
-  color: #495057;
+  background: #9fe96eff;
+  color: #101010;
   border: none;
   border-radius: 20px;
   cursor: pointer;
@@ -622,4 +622,22 @@
 .button-stampa-totale-1{
  background: linear-gradient(135deg, #e2eac5, #cbe389);
 
+}
+
+
+
+
+
+
+
+
+/* Stile speciale per la riga del coperto */
+.ordine-riga:has(.prodotto:contains('Coperto')) {
+  background-color: #f8f9fa;
+  border-left: 3px solid #28a745;
+}
+
+.ordine-riga:has(.prodotto:contains('Coperto')) .prodotto {
+  font-weight: bold;
+  color: #28a745;
 }

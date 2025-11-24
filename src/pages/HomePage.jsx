@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import './HomePage.css';
 
-const numeroTavoli = 13;
+const numeroTavoli = 10;
 const tavoli = Array.from({ length: numeroTavoli }, (_, i) => i + 1);
 
 export default function HomePage() {
@@ -40,7 +40,7 @@ export default function HomePage() {
             >
               {/* AREA WiFi - MODIFICA QUI LA PASSWORD */}
               <div className="wifi-info">
-                <div className="wifi-label">WiFi Password</div>
+                {/* <div className="wifi-label">WiFi Password</div>*/}
                 <div className="wifi-password">Ristorante123</div>
               </div>
 
