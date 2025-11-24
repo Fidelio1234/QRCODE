@@ -485,7 +485,6 @@ export default function GestioneMenuPage() {
       mostraMessaggio('❌ Errore nella modifica del prodotto');
     }
   }, [modifica, apiCall, caricaDati, mostraMessaggio]);
-  
 
   // ✅ Chiudi modal
   const chiudiModal = useCallback(() => {
@@ -588,7 +587,7 @@ export default function GestioneMenuPage() {
 
       {/* Gestione coperto */}
       <div className="coperto-box">
-        <h3> Gestione Coperto</h3>
+        <h3>💰 Gestione Coperto</h3>
         <label>
           <input 
             type="checkbox" 
@@ -613,7 +612,7 @@ export default function GestioneMenuPage() {
 
       {/* Categorie e prodotti */}
       <div className="categorie-section">
-        <h3> Prodotti per Categoria</h3>
+        <h3>📂 Prodotti per Categoria</h3>
         
         {categorie.length === 0 ? (
           <div className="nessun-prodotto">
@@ -623,7 +622,7 @@ export default function GestioneMenuPage() {
           categorie.map(cat => (
             <div key={cat} className="categoria-blocco">
               <div className="categoria-header">
-                <h4> {cat}</h4>
+                <h4>📁 {cat}</h4>
                 <div className="categoria-actions">
                   <button 
                     className="elimina-cat" 
@@ -652,8 +651,6 @@ export default function GestioneMenuPage() {
                         >
                           ✏️ Modifica
                         </button>
-
-
                         <button 
                           className="elimina" 
                           onClick={() => eliminaProdotto(item.id, item.nome)}
@@ -670,22 +667,6 @@ export default function GestioneMenuPage() {
           ))
         )}
       </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
       {/* Modal modifica prodotto */}
       {modifica.show && (
@@ -717,10 +698,6 @@ export default function GestioneMenuPage() {
           </div>
         </div>
       )}
-
-
-
- 
 
       {/* Messaggio di sistema */}
       {msg && (
