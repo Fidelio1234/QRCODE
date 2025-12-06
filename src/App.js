@@ -463,7 +463,21 @@ export default AppWrapper;
 
 
 
-import React, { useState, useEffect } from 'react';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import './App.css';
 import HomePage from './pages/HomePage';
@@ -644,7 +658,7 @@ function App() {
             </Link>
           </div>
           
-          {/* ✅ TASTO LOGOUT */}
+          {/* ✅ TASTO LOGOUT *//*}
           <button 
             onClick={handleLogout}
             style={{
@@ -672,11 +686,239 @@ function App() {
         </nav>
       )}
 
-      {/* ✅ CONTENUTO PRINCIPALE CON MARGINE SUPERIORE */}
+      {/* ✅ CONTENUTO PRINCIPALE CON MARGINE SUPERIORE *//*}
       <div style={{
         marginTop: mostraNavbar ? '60px' : '0',
         minHeight: 'calc(100vh - 60px)'
       }}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/ordina" element={<OrdinaPage />} />
+          <Route path="/operatore" element={<OperatorePage />} />
+          <Route path="/gestione-menu" element={<GestioneMenuPage />} />
+          <Route path="*" element={<p>Pagina non trovata</p>} />
+        </Routes>
+      </div>
+    </>
+  );
+}
+
+function AppWrapper() {
+  return (
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  );
+}
+
+export default AppWrapper;
+
+*/
+
+
+
+
+
+
+
+
+
+import React, { useState, useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import './App.css';
+import HomePage from './pages/HomePage';
+import OrdinaPage from './pages/OrdinaPage';
+import OperatorePage from './pages/OperatorePage';
+import GestioneMenuPage from './pages/GestioneMenuPage';
+import LicenseModal from './components/LicenseModal';
+
+function App() {
+  const location = useLocation();
+  const mostraNavbar = !location.pathname.startsWith('/ordina');
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const passwordRef = useRef(null);
+  
+  // ✅ PASSWORD - CAMBIA QUESTA!
+  const SITE_PASSWORD = 'service'; // ← MODIFICA QUESTA PASSWORD
+
+  // ✅ VERIFICA AUTENTICAZIONE SOLO UNA VOLTA
+  useEffect(() => {
+    console.log('🔐 Controllo autenticazione...');
+    
+    const authData = localStorage.getItem('restaurant_auth');
+    const authTimestamp = localStorage.getItem('auth_timestamp');
+    
+    if (authData && authTimestamp) {
+      const authTime = new Date(authTimestamp);
+      const now = new Date();
+      const hoursDiff = Math.abs(now - authTime) / 36e5;
+      
+      if (hoursDiff < 24) {
+        console.log('✅ Autenticazione valida');
+        setIsAuthorized(true);
+      } else {
+        console.log('⏰ Autenticazione scaduta');
+        localStorage.removeItem('restaurant_auth');
+        localStorage.removeItem('auth_timestamp');
+      }
+    }
+    
+    setCheckingAuth(false);
+  }, []);
+
+  // ✅ SUCCESSO AUTENTICAZIONE
+  const handleAuthSuccess = () => {
+    console.log('🎉 Autenticazione riuscita!');
+    setIsAuthorized(true);
+    localStorage.setItem('restaurant_auth', 'true');
+    localStorage.setItem('auth_timestamp', new Date().toISOString());
+  };
+
+  // ✅ VERIFICA PASSWORD IN TEMPO REALE
+  const checkPasswordRealTime = (password) => {
+    if (password === SITE_PASSWORD) {
+      handleAuthSuccess();
+    }
+  };
+
+  // ✅ LOGOUT
+  const handleLogout = () => {
+    console.log('🚪 Logout');
+    localStorage.removeItem('restaurant_auth');
+    localStorage.removeItem('auth_timestamp');
+    localStorage.removeItem('ultimoAccesso');
+    setIsAuthorized(false);
+  };
+
+  // ✅ FOCUS SULL'INPUT AL CARICAMENTO
+  useEffect(() => {
+    if (!isAuthorized && passwordRef.current) {
+      passwordRef.current.focus();
+    }
+  }, [isAuthorized]);
+
+  // ✅ SE STIAMO CONTROLLANDO L'AUTENTICAZIONE, MOSTRA LOADING
+  if (checkingAuth) {
+    return (
+      <div className="loading-container">
+        <div className="loading-content">
+          <div className="loading-spinner"></div>
+          <h2 className="loading-title">Verifica sicurezza...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ SE NON AUTORIZZATO, MOSTRA SOLO IL SECURITY MODAL
+  if (!isAuthorized) {
+    return (
+      <>
+        <LicenseModal />
+        
+        {/* ✅ MODAL DI SICUREZZA */}
+        <div className="security-modal-overlay">
+          <div className="security-modal">
+            <div className="modal-header">
+              <h2 className="modal-title">🔐 Accesso Riservato</h2>
+             
+            </div>
+            
+            <div className="modal-body">
+              <p className="modal-message">
+                Questo sistema è accessibile solo al personale autorizzato.
+                <br />
+                Per continuare, inserisci il codice di sicurezza:
+              </p>
+              
+              <div className="password-form">
+                <input
+                  ref={passwordRef}
+                  type="password"
+                  id="password-input"
+                  placeholder="Codice di accesso"
+                  className="password-input"
+                  autoFocus
+                  required
+                  onChange={(e) => checkPasswordRealTime(e.target.value)}
+                />
+                
+                <div className="password-hint">
+                  <small>Inserisci il codice - l'accesso è automatico</small>
+                </div>
+              </div>
+              
+              <div className="modal-info">
+                <p className="info-text">
+                  <small>
+                    L'autenticazione è valida per 24 ore.
+                    <br />
+                    Accesso vietato a personale non autorizzato.
+                  </small>
+                </p>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <p className="footer-text">
+                Sistema protetto - v1.0
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // ✅ APP NORMALE SE AUTORIZZATO
+  return (
+    <>
+      <LicenseModal />
+
+      {mostraNavbar && (
+        <nav className="main-navbar">
+          <div className="navbar-center">
+            <Link 
+              to="/" 
+              className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
+            >
+              Home
+            </Link>
+            <span className="nav-separator">|</span>
+            <Link 
+              to="/operatore" 
+              className={`nav-link ${location.pathname === '/operatore' ? 'active' : ''}`}
+            >
+              Area Operatore
+            </Link>
+            <span className="nav-separator">|</span>
+            <Link 
+              to="/gestione-menu" 
+              className={`nav-link ${location.pathname === '/gestione-menu' ? 'active' : ''}`}
+            >
+              Gestione Menu
+            </Link>
+            <span className="nav-separator">|</span>
+            
+           {/* <Link 
+              to="/ordina" 
+              className={`nav-link ${location.pathname === '/ordina' ? 'active' : ''}`}
+            >
+              Pagina Ordini
+            </Link>*/}
+
+          </div>
+          
+          <button 
+            onClick={handleLogout}
+            className="logout-button"
+          >
+            🚪 Logout
+          </button>
+        </nav>
+      )}
+
+      <div className={`main-content ${mostraNavbar ? 'with-navbar' : ''}`}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/ordina" element={<OrdinaPage />} />
