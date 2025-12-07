@@ -717,13 +717,7 @@ export default AppWrapper;
 
 
 
-
-
-
-
-
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import './App.css';
 import HomePage from './pages/HomePage';
@@ -736,16 +730,28 @@ function App() {
   const location = useLocation();
   const mostraNavbar = !location.pathname.startsWith('/ordina');
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
   const passwordRef = useRef(null);
+  const justLoggedOutRef = useRef(false);
   
-  // ✅ PASSWORD - CAMBIA QUESTA!
-  const SITE_PASSWORD = 'service'; // ← MODIFICA QUESTA PASSWORD
+  const SITE_PASSWORD = 'service';
 
-  // ✅ VERIFICA AUTENTICAZIONE SOLO UNA VOLTA
   useEffect(() => {
     console.log('🔐 Controllo autenticazione...');
     
+    // Controlla se appena logged out
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('loggedout') === 'true') {
+      console.log('🔄 Pagina caricata dopo logout');
+      justLoggedOutRef.current = true;
+      window.history.replaceState({}, '', '/');
+      
+      // Blocca autofill per 2 secondi
+      setTimeout(() => {
+        justLoggedOutRef.current = false;
+      }, 2000);
+    }
+    
+    // Verifica autenticazione esistente
     const authData = localStorage.getItem('restaurant_auth');
     const authTimestamp = localStorage.getItem('auth_timestamp');
     
@@ -763,72 +769,88 @@ function App() {
         localStorage.removeItem('auth_timestamp');
       }
     }
-    
-    setCheckingAuth(false);
   }, []);
 
-  // ✅ SUCCESSO AUTENTICAZIONE
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = useCallback(() => {
     console.log('🎉 Autenticazione riuscita!');
     setIsAuthorized(true);
     localStorage.setItem('restaurant_auth', 'true');
     localStorage.setItem('auth_timestamp', new Date().toISOString());
-  };
+  }, []);
 
-  // ✅ VERIFICA PASSWORD IN TEMPO REALE
-  const checkPasswordRealTime = (password) => {
+  const checkPasswordRealTime = useCallback((password) => {
+    // Blocca se appena fatto logout
+    if (justLoggedOutRef.current) {
+      console.log('🚫 Bloccato - logout recente');
+      return;
+    }
+    
+    // Blocca se già autenticato
+    if (isAuthorized) return;
+    
+    // Ignora vuoti
+    if (!password || password.trim() === '') return;
+    
+    console.log('🔍 Verificando:', password);
+    
     if (password === SITE_PASSWORD) {
+      console.log('✅ Accesso garantito');
       handleAuthSuccess();
     }
-  };
+  }, [isAuthorized, handleAuthSuccess]);
 
-  // ✅ LOGOUT
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     console.log('🚪 Logout');
+    
+    // Pulisci tutto
     localStorage.removeItem('restaurant_auth');
     localStorage.removeItem('auth_timestamp');
-    localStorage.removeItem('ultimoAccesso');
-    setIsAuthorized(false);
-  };
+    
+    // Imposta flag logout
+    justLoggedOutRef.current = true;
+    
+    // Redirect pulito
+    setTimeout(() => {
+      window.location.href = '/?loggedout=true';
+    }, 100);
+  }, []);
 
-  // ✅ FOCUS SULL'INPUT AL CARICAMENTO
+  // 🔴 FOCUS AUTOMATICO SULL'INPUT (semplice)
   useEffect(() => {
     if (!isAuthorized && passwordRef.current) {
-      passwordRef.current.focus();
+      console.log('🎯 Imposto focus su input password');
+      
+      // Piccolo delay per stabilizzare
+      const timer = setTimeout(() => {
+        if (passwordRef.current) {
+          passwordRef.current.focus();
+        }
+      }, 300);
+      
+      return () => clearTimeout(timer);
     }
   }, [isAuthorized]);
 
-  // ✅ SE STIAMO CONTROLLANDO L'AUTENTICAZIONE, MOSTRA LOADING
-  if (checkingAuth) {
-    return (
-      <div className="loading-container">
-        <div className="loading-content">
-          <div className="loading-spinner"></div>
-          <h2 className="loading-title">Verifica sicurezza...</h2>
-        </div>
-      </div>
-    );
-  }
-
-  // ✅ SE NON AUTORIZZATO, MOSTRA SOLO IL SECURITY MODAL
+  // 🔴 SE NON AUTORIZZATO: MOSTRA SOLO IL SECURITY MODAL
   if (!isAuthorized) {
     return (
       <>
-        <LicenseModal />
+        {/* Form falso per bloccare autofill browser */}
+        <div style={{ display: 'none' }}>
+          <input type="text" name="username" autoComplete="username" />
+          <input type="password" name="password" autoComplete="current-password" />
+        </div>
         
-        {/* ✅ MODAL DI SICUREZZA */}
+        {/* Modal di sicurezza */}
         <div className="security-modal-overlay">
           <div className="security-modal">
             <div className="modal-header">
-              <h2 className="modal-title">🔐 Accesso Riservato</h2>
-             
+              <h2 className="modal-title">🔐 Accesso Sistema</h2>
             </div>
             
             <div className="modal-body">
               <p className="modal-message">
-                Questo sistema è accessibile solo al personale autorizzato.
-                <br />
-                Per continuare, inserisci il codice di sicurezza:
+                Inserisci il codice di sicurezza:
               </p>
               
               <div className="password-form">
@@ -836,33 +858,35 @@ function App() {
                   ref={passwordRef}
                   type="password"
                   id="password-input"
-                  placeholder="Codice di accesso"
+                  placeholder="Digita qui il codice..."
                   className="password-input"
+                  autoComplete="new-password"
                   autoFocus
-                  required
-                  onChange={(e) => checkPasswordRealTime(e.target.value)}
+                  onChange={(e) => {
+                    const password = e.target.value;
+                    
+                    // Debounce semplice
+                    clearTimeout(window.passwordTimeout);
+                    window.passwordTimeout = setTimeout(() => {
+                      checkPasswordRealTime(password);
+                    }, 200);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      checkPasswordRealTime(e.target.value);
+                    }
+                  }}
+                  // Attributi anti-autofill
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck="false"
+                  data-lpignore="true"
                 />
-                
-                <div className="password-hint">
-                  <small>Inserisci il codice - l'accesso è automatico</small>
-                </div>
               </div>
               
-              <div className="modal-info">
-                <p className="info-text">
-                  <small>
-                    L'autenticazione è valida per 24 ore.
-                    <br />
-                    Accesso vietato a personale non autorizzato.
-                  </small>
-                </p>
+              <div className="modal-hint">
+                <small>L'accesso è automatico quando il codice è corretto</small>
               </div>
-            </div>
-            
-            <div className="modal-footer">
-              <p className="footer-text">
-                Sistema protetto - v1.0
-              </p>
             </div>
           </div>
         </div>
@@ -870,7 +894,7 @@ function App() {
     );
   }
 
-  // ✅ APP NORMALE SE AUTORIZZATO
+  // 🔴 SE AUTORIZZATO: APP NORMALE
   return (
     <>
       <LicenseModal />
@@ -878,42 +902,21 @@ function App() {
       {mostraNavbar && (
         <nav className="main-navbar">
           <div className="navbar-center">
-            <Link 
-              to="/" 
-              className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
-            >
+            <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
               Home
             </Link>
             <span className="nav-separator">|</span>
-            <Link 
-              to="/operatore" 
-              className={`nav-link ${location.pathname === '/operatore' ? 'active' : ''}`}
-            >
-              Area Operatore
+            <Link to="/operatore" className={`nav-link ${location.pathname === '/operatore' ? 'active' : ''}`}>
+              Operatore
             </Link>
             <span className="nav-separator">|</span>
-            <Link 
-              to="/gestione-menu" 
-              className={`nav-link ${location.pathname === '/gestione-menu' ? 'active' : ''}`}
-            >
-              Gestione Menu
+            <Link to="/gestione-menu" className={`nav-link ${location.pathname === '/gestione-menu' ? 'active' : ''}`}>
+              Menu
             </Link>
-            <span className="nav-separator">|</span>
-            
-           {/* <Link 
-              to="/ordina" 
-              className={`nav-link ${location.pathname === '/ordina' ? 'active' : ''}`}
-            >
-              Pagina Ordini
-            </Link>*/}
-
           </div>
           
-          <button 
-            onClick={handleLogout}
-            className="logout-button"
-          >
-            🚪 Logout
+          <button onClick={handleLogout} className="logout-button">
+            Logout
           </button>
         </nav>
       )}
